@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+
+  webserver:
+    image: 'nginx:1.21-alpine'
+    volumes:
+      - './dist:/usr/share/nginx/html/chineselearn'
+    ports: [80:80]
