@@ -6,7 +6,7 @@ console.log('BASE='+(document.getElementById ('base') as HTMLBaseElement).href)
 
 const router = createRouter({
   //history: createWebHistory(import.meta.env.BASE_URL),
-  history: createWebHistory('/chineselearn/'),
+  history: createWebHistory('/chinese-learn/'),
   // history: createWebHistory((document.getElementById ('base') as HTMLBaseElement).href),
   routes: [
     {
