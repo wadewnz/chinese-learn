@@ -35,14 +35,14 @@
     </div>
     <div>
       <label for="additionalLines">Additional Lines</label><br/>
-      <textarea id="additionalLines" cols="80" rows="8" v-model="store.settings.additionalLines"></textarea>
+      <textarea id="additionalLines" rows="8" v-model="store.settings.additionalLines"></textarea>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { useSettingsStore } from '../stores/settings'
-  import { ref } from 'vue'
+  // import { ref } from 'vue'
 
   const store = useSettingsStore()
 
@@ -56,5 +56,9 @@
   gap: 8px;
   max-height: 100%;
   overflow-y: auto;  
+}
+#additionalLines {
+  margin: 0 8px;
+  width: 98vw
 }
 </style>
