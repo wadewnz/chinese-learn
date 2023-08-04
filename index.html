@@ -7,7 +7,7 @@
       let path = location.pathname;
       //console.log('localtion.pathname=' + path);
       let pos = 0;
-      path = (pos = path.lastIndexOf('/')) > 0 ? path.substr(0, pos) : '/';
+      path = (pos = path.lastIndexOf('/')) > 0 ? path.substr(0, pos + 1) : '/';
       document.getElementById('base').href = path;
       //console.log('path=' + path);
     </script>
