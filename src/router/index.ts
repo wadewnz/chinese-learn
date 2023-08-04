@@ -1,13 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
-console.log('BASE_URL='+import.meta.env.BASE_URL)
-console.log('BASE='+(document.getElementById ('base') as HTMLBaseElement).href)
+const basePath: string = new URL((document.getElementById('base') as HTMLBaseElement).href).pathname
+console.log('BASEPATH=' + basePath)
 
 const router = createRouter({
-  //history: createWebHistory(import.meta.env.BASE_URL),
-  history: createWebHistory('/chinese-learn/'),
-  // history: createWebHistory((document.getElementById ('base') as HTMLBaseElement).href),
+  history: createWebHistory(basePath),
   routes: [
     {
       path: '/',

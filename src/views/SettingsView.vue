@@ -33,15 +33,18 @@
     <div>
       <label for="maxSequenceRepeats">Max Sequence Repeats </label><input type="number" min="0" max="100" v-model="store.settings.maxSequenceRepeats" id="maxSequenceRepeats"/>
     </div>
+    <div>
+      <label for="additionalLines">Additional Lines</label><br/>
+      <textarea id="additionalLines" cols="80" rows="8" v-model="store.settings.additionalLines"></textarea>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { useSettingsStore } from '../stores/settings'
-  // import { ref } from 'vue'
+  import { ref } from 'vue'
 
   const store = useSettingsStore()
-
 
 </script>
 

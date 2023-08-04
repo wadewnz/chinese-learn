@@ -6,20 +6,20 @@ import vue from '@vitejs/plugin-vue'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  // base: '/chineselearn/',
+  // base: '/chinese-learn/',
   base: '',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  server: {
-    proxy: {
-      '^/chineselearn/lists': {
-        target: 'http://localhost:5173',
-        //changeOrigin: true,
-        rewrite: path => path.replace('/chineselearn', '')
-      }
-    }
-  }
+  // server: {
+  //   proxy: {
+  //     '^/chinese-learn/lists': {
+  //       target: 'http://localhost:5173',
+  //       //changeOrigin: true,
+  //       rewrite: path => path.replace('/chinese-learn', '')
+  //     }
+  //   }
+  // }
 })

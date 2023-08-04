@@ -171,17 +171,20 @@ watch(() => settings.ttsEnglish.voiceName, (value: string) => {
 
 let isDirty = false
 let settingsTimeout = 0
+let nextSettings = ''
 
 watch(() => settings, () => {
-  isDirty = true
-  console.log('Settings Dirty')
-  if (settingsTimeout !== 0) return
+  nextSettings = JSON.stringify(settings)
+  isDirty = nextSettings != lastSettings
+  console.log(isDirty ? 'Settings Dirty' : 'Settings Not Dirty')
+  if (settingsTimeout !== 0 || !isDirty) return
   settingsTimeout = setTimeout(() => {
     settingsTimeout = 0
     if (isDirty) {
       isDirty = false
       console.log('Save Settings')
-      localStorage.settings = JSON.stringify(settings)
+      lastSettings = nextSettings
+      localStorage.settings = nextSettings
     }
   },
     30000)
@@ -210,7 +213,10 @@ function deepExtend(extended: LooseObject, ...args: LooseObject[]): LooseObject 
   return extended
 }
 
+let lastSettings: string
+
 if (localStorage.settings) {
+  lastSettings = localStorage.settings
   deepExtend(settings, JSON.parse(localStorage.settings))
   console.log('Settings:', settings)
 }

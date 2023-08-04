@@ -28,14 +28,14 @@
             @dblclick="play($event, rowIndex)"
             v-long-press:1000="longPress2" v-long-press:start="longPress"
         >
-          <td v-if="row[3].startsWith('#')" :colspan="columns.length">{{ row[3] }}</td>
+          <td v-if="isSingleRow(rowIndex)" :colspan="columns.length">{{ row[3] }}</td>
           <td v-else v-for="(column) in columns"
               :key="column.name"
               :style="{ width: `${column.width}px` }"
           >
             {{ row[column.field] }}
           </td>
-          <td><BaseButton v-if="!row[3].startsWith('#')" @click="play($event, rowIndex)" >{{ rowLabel(rowIndex) }}</BaseButton></td>
+          <td><BaseButton v-if="isPlayRow(rowIndex)" @click="play($event, rowIndex)" >{{ rowLabel(rowIndex) }}</BaseButton></td>
         </tr>
       </tbody>
     </table>
@@ -43,7 +43,7 @@
 </template>
   
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import BaseButton from './BaseButton.vue'
 import { parse } from '@vanillaes/csv'
 import { useSettingsStore } from '@/stores/settings'
@@ -89,6 +89,10 @@ const filePath = 'lists/CantUpperBeginner.csv'
     let data = parse(fileText)
     data.splice(0, 1)  // remove header
     rows.value = data
+    if (store.settings.additionalLines) {
+      let lines = store.settings.additionalLines.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
+      rows.value.splice(0, 0, ...lines)
+    }
     // console.log(data)
   })
  .catch(error => console.error(error))
@@ -132,12 +136,35 @@ let playingRow = ref('')
     return selectedRowIndexes.value.indexOf(rowIndex) !== -1
   }
 
+  function isSingleRow(rowIndex: number): boolean {
+    return rows.value[rowIndex][3].startsWith('#') || rows.value[rowIndex][4] == 'additional'
+  }
+
+  function isPlayRow(rowIndex: number): boolean {
+    return !rows.value[rowIndex][3].startsWith('#') && rows.value[rowIndex][4] !== 'additional' || isChineseRow(rowIndex)
+  }
+
   function rowLabel(rowIndex: number): string {
     return rows.value[rowIndex][0] === playingRow.value ? 'Stop' : 'Play'
   }
 
   function playLabel(): string {
     return ttsState.value === 'idle' ? 'Play' : 'Stop'
+  }
+
+  function isChineseRow(rowIndex: number) {
+    let row = rows.value[rowIndex]
+    //console.log(`${rowIndex} = ${row[4]}`)
+    if (row[4] === "additional" && row[3]) {
+      let ratio = filterChinese(row[3]).length / row[3].length
+      //console.log(`ratio=${ratio} - ${row[3]}`)
+      return ratio > 0.33
+    }
+    return false
+  }
+
+  function filterChinese(text: string): string {
+	  return text.replace(/[^\u2E80-\u2ff0\u30A1-\uff00（），。？?!！⋯ /.]/gu, '')
   }
 
   function toggleRowSelection(event: MouseEvent, rowIndex: number) {
@@ -214,13 +241,17 @@ function play(event: MouseEvent, rowIndex: number) {
       playList = []
       playIndex = -1
       selectedRowIndexes.value.forEach(i => {
-        if (rows.value[i][1] && !rows.value[i][3].startsWith('#')) {
+        if (rows.value[i][1] && !rows.value[i][3].startsWith('#')) { 
           console.log(`RowId=${rows.value[i][0]}`)
           const label = `${rows.value[i][1]} - ${rows.value[i][2]} - ${rows.value[i][3]}`
           if (repeat.value) {
             playList.push({ type: 'E', text: rows.value[i][3], label})
           }
           playList.push({ type: 'C', text: rows.value[i][1], label})
+        }
+        else if (isChineseRow(i)) {
+          const label = `${rows.value[i][3]} - ${rows.value[i+1][3]}`
+          playList.push({ type: 'C', text: rows.value[i][3], label})
         }
       })
       playTts()
@@ -232,23 +263,32 @@ function play(event: MouseEvent, rowIndex: number) {
   }
   if (!longPressed) {
     console.log(JSON.stringify(rows.value[rowIndex], null, 2))
-    if (rows.value[rowIndex][1]) {
-      if (ttsState.value !== 'idle' && rows.value[rowIndex][0] === playingRow.value) {
+    let row = rows.value[rowIndex]
+    if (row[1] || row[4] == 'additional' && row[3]) {
+      if (ttsState.value !== 'idle' && row[0] === playingRow.value) {
         stopHandler()
         return
       }
       else if (ttsState.value === 'idle') {
-        playingRow.value = rows.value[rowIndex][0]
+        playingRow.value = row[0]
         if (store.tempSettings.ttsCantonese) {
           utterance.voice = store.tempSettings.ttsCantonese
           utterance.lang = store.tempSettings.ttsCantonese.lang
         }
         utterance.pitch = store.settings.ttsCantonese.pitch
         utterance.rate = store.settings.ttsCantonese.rate
-        ttsLabel.value = `${rows.value[rowIndex][1]} - ${rows.value[rowIndex][2]} - ${rows.value[rowIndex][3]}`
-        utterance.text = rows.value[rowIndex][1]
+        if (row[4] == 'additional') {
+          ttsLabel.value = `${row[3]} - ${rows.value[rowIndex + 1][3]}`
+          utterance.text = row[3]
+
+        }
+        else {
+          ttsLabel.value = `${row[1]} - ${row[2]} - ${row[3]}`
+          utterance.text = row[1]
+        }
         playCurrentCount.value = 0
         maxRepeats.value = store.settings.maxRepeats
+        console.log(`Play: ${utterance.lang} - ${utterance.text}`)
         window.speechSynthesis.speak(utterance)
       }
     }
@@ -340,7 +380,7 @@ function playTts(): void {
     }
     ttsLabel.value = playList[playIndex].label
     utterance.text = playList[playIndex].text
-    console.log(`Playing: ${playList[playIndex].text}`)
+    console.log(`Playing: ${utterance.lang} - ${utterance.text}`)
   } else {
     console.log('Repeat')
   }
@@ -407,6 +447,16 @@ function longPress2() {
   console.log('Long Press2')
   longPressed = true
 }
+
+watch(() => store.settings.additionalLines, (a) => {
+  while (rows.value.length && rows.value[0][4] == 'additional') {
+    rows.value.splice(0, 1);
+  }
+  if (a) {
+    let lines = a.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
+    rows.value.splice(0, 0, ...lines)
+  }
+})
 
 // navigator.permissions.query({ name: PermissonName. "write-on-clipboard" }).then((result) => {
 //   if (result.state == "granted" || result.state == "prompt") {

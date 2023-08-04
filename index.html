@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8">
     <base id="base" href="/chinese-learn/"/>
+    <script type="application/javascript">
+      let path = location.pathname;
+      //console.log('localtion.pathname=' + path);
+      let pos = 0;
+      path = (pos = path.lastIndexOf('/')) > 0 ? path.substr(0, pos) : '/';
+      document.getElementById('base').href = path;
+      //console.log('path=' + path);
+    </script>
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Learn Chinese</title>
