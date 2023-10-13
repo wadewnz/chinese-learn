@@ -99,7 +99,7 @@ const filePath = 'lists/CantUpperBeginner.csv'
     fileRows = [...data]
     console.log('scriptIndex='+scriptIndex.value)
     if (scriptIndex.value >= 0 && store.settings.scripts[scriptIndex.value].lines) {
-      let lines = store.settings.scripts[scriptIndex.value].lines.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
+      let lines = store.settings.scripts[scriptIndex.value].lines.split('\n').filter((i) => i).map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
       rows.value = lines //.splice(0, 0, ...lines)
     }
     else {
@@ -316,9 +316,8 @@ function play(event: MouseEvent, rowIndex: number) {
         utterance.pitch = store.settings.ttsCantonese.pitch
         utterance.rate = store.settings.ttsCantonese.rate
         if (row[4] == 'additional') {
-          ttsLabel.value = `${row[3]} - ${rows.value[rowIndex + 1][3]}`
+          ttsLabel.value = (rowIndex > 0 ? `${rows.value[rowIndex - 1][3]} - ` : '') + `${row[3]}` + (rowIndex + 1 < rows.value.length ? ` - ${rows.value[rowIndex + 1][3]}` : '')
           utterance.text = row[3]
-
         }
         else {
           ttsLabel.value = `${row[1]} - ${row[2]} - ${row[3]}`
@@ -524,7 +523,7 @@ watch(() => store.settings.scriptName, (a) => {
     console.log('lines=' + store.settings.scripts[scriptIndex.value].lines)
   }
   if (scriptIndex.value >= 0 && store.settings.scripts[scriptIndex.value].lines) {
-    const lines = store.settings.scripts[scriptIndex.value].lines.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
+    const lines = store.settings.scripts[scriptIndex.value].lines.split('\n').filter((i) => i).map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
     rows.value = lines //.splice(0, 0, ...lines)
   }
   else {
