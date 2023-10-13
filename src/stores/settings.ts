@@ -13,6 +13,11 @@ type TtsSettings = {
   pitch: number
 }
 
+type ScriptInfo = {
+  name: string
+  lines: string
+}
+
 type Settings = {
   version: number
   repeatDelay: number
@@ -22,6 +27,8 @@ type Settings = {
   ttsCantonese: TtsSettings
   ttsMandarin: TtsSettings
   additionalLines: string
+  scriptName: string
+  scripts: ScriptInfo[]
 }
 
 const defaultSettings: Settings = {
@@ -45,6 +52,8 @@ const defaultSettings: Settings = {
     pitch: 1
   },
   additionalLines: "",
+  scriptName: "",
+  scripts: []
 }
 
 type VoiceOptions = {
@@ -219,6 +228,10 @@ if (localStorage.settings) {
   lastSettings = localStorage.settings
   deepExtend(settings, JSON.parse(localStorage.settings))
   console.log('Settings:', settings)
+  if (settings.additionalLines) {
+    settings.scripts.push({name:'Additional', lines: settings.additionalLines})
+    settings.additionalLines = ""
+  }
 }
 
 export const useSettingsStore = defineStore('settings', () => {

@@ -1,17 +1,22 @@
 <template> 
   <div id="page">
     <div id="toolbar">
+      <BaseButton @click="selectAll">SelectAll</BaseButton>
+      <BaseButton @click="selectNone">SelectNone</BaseButton>
       <input type="checkbox" id="repeat" v-model="repeat"/><label for="repeat">Repeat</label>
       <BaseButton @click="play($event, -1)" >{{ playLabel() }}</BaseButton>
+      <select v-model="store.settings.scriptName" id="script">
+        <option value="[default]" text="[default]" />
+        <option v-for="(i, index) in store.settings.scripts" :key="index" :value="i.name" :text="i.name" />
+      </select>
     </div>
     <div class="ttsLabel" v-if="ttsLabel">{{ ttsLabel }} [ Repeats: {{ playCurrentCount }}/{{ maxRepeats }}]</div>
+    <div class="ttsLabel" v-else></div>
     <table>
       <thead>
         <tr>
           <th v-for="(column, index) in columns" :key="index">
-            <div class="resizable-column"
-              :style="{ width: column.width + 'px' }"
-            >
+            <div class="resizable-column" :style="{ width: column.width + 'px' }" >
               {{ column.name }}
               <div class="resize-handle"
                 @pointerdown="startResize($event, index)"></div>
@@ -82,17 +87,29 @@ function getFileText(filePath: string): Promise<string> {
       throw error
     })
 }
+let fileRows:string[][] = [[]]
+
 // const filePath = (document.getElementById ('base') as HTMLBaseElement).href + 'CantUpperBeginner.csv'
 const filePath = 'lists/CantUpperBeginner.csv'
  getFileText(filePath)
   .then(fileText => {
     let data = parse(fileText)
     data.splice(0, 1)  // remove header
-    rows.value = data
-    if (store.settings.additionalLines) {
-      let lines = store.settings.additionalLines.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
-      rows.value.splice(0, 0, ...lines)
+    //rows.value = data
+    fileRows = [...data]
+    console.log('scriptIndex='+scriptIndex.value)
+    if (scriptIndex.value >= 0 && store.settings.scripts[scriptIndex.value].lines) {
+      let lines = store.settings.scripts[scriptIndex.value].lines.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
+      rows.value = lines //.splice(0, 0, ...lines)
     }
+    else {
+      rows.value = fileRows
+    }
+
+    // if (store.settings.additionalLines) {
+    //   let lines = store.settings.additionalLines.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
+    //   rows.value.splice(0, 0, ...lines)
+    // }
     // console.log(data)
   })
  .catch(error => console.error(error))
@@ -131,6 +148,25 @@ let playingRow = ref('')
 //       return null;
 //     }
 //   })
+
+function selectAll(): void {
+    for (let i = 0; i < rows.value.length; ++i) {
+      if (!isPlayRow(i)) continue
+      const index = selectedRowIndexes.value.indexOf(i)
+      if (index === -1) {
+        selectedRowIndexes.value.push(i)            
+      }
+    }
+    selectedRowIndexes.value.sort()
+    lastSelectedIndex = -1
+    isSelect = false
+  }
+
+  function selectNone(): void {
+    selectedRowIndexes.value = []
+    lastSelectedIndex = -1
+    isSelect = false
+  }
 
   function isRowSelected(rowIndex: number): boolean {
     return selectedRowIndexes.value.indexOf(rowIndex) !== -1
@@ -174,12 +210,13 @@ let playingRow = ref('')
         const index = selectedRowIndexes.value.indexOf(i)
         if (isSelect) {
           if (index === -1) {
-            selectedRowIndexes.value.push(i)
+            selectedRowIndexes.value.push(i)            
           }
         } else if (index !== -1) {
           selectedRowIndexes.value.splice(index, 1)
         }
       }
+      selectedRowIndexes.value.sort()
     } else {
       const index = selectedRowIndexes.value.indexOf(rowIndex)
       if (index !== -1) {
@@ -187,6 +224,7 @@ let playingRow = ref('')
         // console.log(`Remove rowIndex ${rowIndex}`)
       } else {
         selectedRowIndexes.value.push(rowIndex)
+        selectedRowIndexes.value.sort()
         if (rows.value[rowIndex][1]) {
           navigator.clipboard.writeText(rows.value[rowIndex][1])
         }
@@ -448,6 +486,7 @@ function longPress2() {
   longPressed = true
 }
 
+/*
 watch(() => store.settings.additionalLines, (a) => {
   while (rows.value.length && rows.value[0][4] == 'additional') {
     rows.value.splice(0, 1);
@@ -457,6 +496,41 @@ watch(() => store.settings.additionalLines, (a) => {
     rows.value.splice(0, 0, ...lines)
   }
 })
+*/
+const scriptIndex = ref<number>(store.settings.scripts.findIndex((i) => i.name === store.settings.scriptName))
+
+watch(() => store.settings.scriptName, (a) => {
+  console.log('ScriptName='+a)
+  const lastIndex = scriptIndex.value
+  scriptIndex.value = store.settings.scripts.findIndex((i) => i.name === a)
+  console.log('lastIndex=' + lastIndex+' scriptIndex='+scriptIndex.value)
+  if (lastIndex == scriptIndex.value) return
+  // while (rows.value.length && rows.value[0][4] == 'additional') {
+  //   rows.value.splice(0, 1);
+  // }
+
+  selectedRowIndexes.value = []
+  lastSelectedIndex = -1
+  isSelect = false
+  playingRow.value = ''
+  playIndex = -1
+  playList = []
+  playCurrentCount.value = 0
+  maxRepeats.value = 0
+  playSequenceCount = 0
+  ttsLabel.value = ''
+
+  if (scriptIndex.value >= 0) {
+    console.log('lines=' + store.settings.scripts[scriptIndex.value].lines)
+  }
+  if (scriptIndex.value >= 0 && store.settings.scripts[scriptIndex.value].lines) {
+    const lines = store.settings.scripts[scriptIndex.value].lines.split('\n').map((t, i) => [`${i}`, '', '', t.trim(), 'additional'])
+    rows.value = lines //.splice(0, 0, ...lines)
+  }
+  else {
+    rows.value = fileRows
+  }
+} )
 
 // navigator.permissions.query({ name: PermissonName. "write-on-clipboard" }).then((result) => {
 //   if (result.state == "granted" || result.state == "prompt") {
@@ -579,6 +653,7 @@ tr.selected:nth-child(even) td {
 
 .ttsLabel {
   max-width: 100vw;
+  height:58px;
   white-space: normal;
 }
 
