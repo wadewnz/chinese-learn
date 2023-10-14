@@ -1,8 +1,8 @@
 <template> 
   <div id="page">
     <div id="toolbar">
-      <BaseButton @click="selectAll">SelectAll</BaseButton>
-      <BaseButton @click="selectNone">SelectNone</BaseButton>
+      <BaseButton @click="selectAll">All</BaseButton>
+      <BaseButton @click="selectNone">None</BaseButton>
       <input type="checkbox" id="repeat" v-model="repeat"/><label for="repeat">Repeat</label>
       <BaseButton @click="play($event, -1)" >{{ playLabel() }}</BaseButton>
       <select v-model="store.settings.scriptName" id="script">
@@ -157,7 +157,7 @@ function selectAll(): void {
         selectedRowIndexes.value.push(i)            
       }
     }
-    selectedRowIndexes.value.sort()
+    selectedRowIndexes.value.sort((a, b) => (a - b))
     lastSelectedIndex = -1
     isSelect = false
   }
@@ -216,7 +216,7 @@ function selectAll(): void {
           selectedRowIndexes.value.splice(index, 1)
         }
       }
-      selectedRowIndexes.value.sort()
+      selectedRowIndexes.value.sort((a, b) => (a - b))
     } else {
       const index = selectedRowIndexes.value.indexOf(rowIndex)
       if (index !== -1) {
@@ -224,7 +224,7 @@ function selectAll(): void {
         // console.log(`Remove rowIndex ${rowIndex}`)
       } else {
         selectedRowIndexes.value.push(rowIndex)
-        selectedRowIndexes.value.sort()
+        selectedRowIndexes.value.sort((a, b) => (a - b))
         if (rows.value[rowIndex][1]) {
           navigator.clipboard.writeText(rows.value[rowIndex][1])
         }
