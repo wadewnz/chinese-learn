@@ -13,6 +13,11 @@ const router = createRouter({
       component: HomeView
     },
     {
+      path: '/convert',
+      name: 'convert',
+      component: () => import('../views/ConvertView.vue')
+    },
+    {
       path: '/welcome',
       name: 'welcome',
       component: () => import('../views/WelcomeView.vue')
